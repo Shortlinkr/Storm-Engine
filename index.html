@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Storm Engine</title>
+<style>
+  body {
+    margin: 0;
+    background: #0a0f1c;
+    overflow: hidden;
+  }
+
+  #flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<script>
+// ==========================
+// 🌧️ AUDIO SETUP
+// ==========================
+
+// --- RAIN (loop) ---
+const rain = new Audio("sounds/rain/rain_loop.wav");
+rain.loop = true;
+rain.volume = 0.5;
+
+// --- WIND (placeholder for now) ---
+const wind = new Audio("sounds/wind/wind_base.wav");
+wind.loop = true;
+wind.volume = 0.2;
+
+// --- LIGHTNING CATEGORIES ---
+const lightning = {
+  close: [
+    "sounds/lightning/close/strike_1.wav",
+    "sounds/lightning/close/strike_2.wav"
+  ],
+  mid: [
+    "sounds/lightning/mid/thunder_1.wav"
+  ],
+  far: [
+    "sounds/lightning/far/rumble_1.wav"
+  ]
+};
+
+// ==========================
+// ⚡ UTILS
+// ==========================
+
+function playSound(src, volume = 1) {
+  const audio = new Audio(src);
+  audio.volume = volume;
+  audio.play();
+}
+
+// ==========================
+// ⚡ LIGHTNING SYSTEM
+// ==========================
+
+function spawnLightning() {
+  const rand = Math.random();
+
+  let category;
+  if (rand < 0.6) category = "far";
+  else if (rand < 0.9) category = "mid";
+  else category = "close";
+
+  const sounds = lightning[category];
+  const src = sounds[Math.floor(Math.random() * sounds.length)];
+
+  triggerLightning(src, category);
+}
+
+function triggerLightning(src, category) {
+  flashScreen(category);
+
+  let delay = 0;
+
+  if (category === "mid") delay = 200 + Math.random() * 300;
+  if (category === "far") delay = 500 + Math.random() * 800;
+
+  setTimeout(() => {
+    let volume = 0.5;
+    if (category === "close") volume = 1;
+    if (category === "far") volume = 0.3;
+
+    playSound(src, volume);
+  }, delay);
+}
+
+// ==========================
+// 💡 VISUAL FLASH
+// ==========================
+
+const flash = document.getElementById("flash");
+
+function flashScreen(category) {
+  let intensity = 1;
+
+  if (category === "far") intensity = 0.4;
+  if (category === "mid") intensity = 0.7;
+
+  // quick flicker (more realistic than single flash)
+  flash.style.transition = "none";
+  flash.style.opacity = intensity;
+
+  setTimeout(() => {
+    flash.style.transition = "opacity 0.3s ease-out";
+    flash.style.opacity = 0;
+  }, 50);
+}
+
+// ==========================
+// 🌬️ STORM LOOP
+// ==========================
+
+let stormIntensity = 0.5; // 0 → 1 (you can hook this to UI later)
+
+function stormLoop() {
+  // chance of lightning per tick
+  if (Math.random() < stormIntensity * 0.02) {
+    spawnLightning();
+  }
+
+  requestAnimationFrame(stormLoop);
+}
+
+// ==========================
+// ▶️ START SYSTEM
+// ==========================
+
+function startStorm() {
+  rain.play();
+  wind.play(); // will work once you add file
+  stormLoop();
+}
+
+// required for browser audio autoplay rules
+document.body.addEventListener("click", startStorm, { once: true });
+
+</script>
+</body>
+</html>
